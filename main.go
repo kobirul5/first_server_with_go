@@ -7,10 +7,10 @@ import (
 
 func main() {
 
-	mux := http.NewServeMux()	
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", rootHandler)
-	// mux.HandleFunc("/api", apiCallHandler)
+	mux.HandleFunc("/health", handleHealth)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -24,3 +24,6 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hello, World!")
 }
 
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Health check passed!")
+}
