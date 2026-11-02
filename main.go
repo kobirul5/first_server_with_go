@@ -62,4 +62,3 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
-
