@@ -12,6 +12,19 @@ type User struct {
 	Email string `json:"email"`
 }
 
+type Product struct {
+	ID       int     `json:"id"`
+	Name     string  `json:"name"`
+	Price    float64 `json:"price"`
+	Category string  `json:"category"`
+}
+
+type Post struct {
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+}
+
 func main() {
 	mux := http.NewServeMux()
 
@@ -21,6 +34,8 @@ func main() {
 	mux.HandleFunc("/about", handleAbout)
 	mux.HandleFunc("/contact", handleContact)
 	mux.HandleFunc("/api/users", handleUsers)
+	mux.HandleFunc("/api/products", handleProducts)
+	mux.HandleFunc("/api/posts", handlePosts)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -59,6 +74,32 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	}
+}
+
+func handleProducts(w http.ResponseWriter, r *http.Request) {
+	products := []Product{
+		{ID: 1, Name: "Laptop", Price: 75000.0, Category: "Electronics"},
+		{ID: 2, Name: "Mechanical Keyboard", Price: 3500.0, Category: "Accessories"},
+		{ID: 3, Name: "Wireless Mouse", Price: 1500.0, Category: "Accessories"},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(products); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	}
+}
+
+func handlePosts(w http.ResponseWriter, r *http.Request) {
+	posts := []Post{
+		{ID: 1, Title: "Introduction to Go", Author: "Kobirul"},
+		{ID: 2, Title: "Building REST APIs in Go", Author: "Rahim"},
+		{ID: 3, Title: "Concurrency in Go", Author: "Karim"},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(posts); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
