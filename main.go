@@ -46,13 +46,7 @@ func main() {
 	// Routes
 	mux.HandleFunc("/", rootHandler)
 	mux.HandleFunc("/health", handleHealth)
-	mux.HandleFunc("/about", handleAbout)
-	mux.HandleFunc("/contact", handleContact)
 	mux.HandleFunc("/api/users", handleUsers)
-	mux.HandleFunc("/api/products", handleProducts)
-	mux.HandleFunc("/api/posts", handlePosts)
-	mux.HandleFunc("/api/courses", handleCourses)
-	mux.HandleFunc("/api/orders", handleOrders)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -74,13 +68,6 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Health check passed!")
 }
 
-func handleAbout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "About: This is a simple HTTP server written in Go.")
-}
-
-func handleContact(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Contact: Reach out to us at contact@example.com")
-}
 
 func handleUsers(w http.ResponseWriter, r *http.Request) {
 	users := []User{
@@ -91,58 +78,6 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	}
-}
-
-func handleProducts(w http.ResponseWriter, r *http.Request) {
-	products := []Product{
-		{ID: 1, Name: "Laptop", Price: 75000.0, Category: "Electronics"},
-		{ID: 2, Name: "Mechanical Keyboard", Price: 3500.0, Category: "Accessories"},
-		{ID: 3, Name: "Wireless Mouse", Price: 1500.0, Category: "Accessories"},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(products); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	}
-}
-
-func handlePosts(w http.ResponseWriter, r *http.Request) {
-	posts := []Post{
-		{ID: 1, Title: "Introduction to Go", Author: "Kobirul"},
-		{ID: 2, Title: "Building REST APIs in Go", Author: "Rahim"},
-		{ID: 3, Title: "Concurrency in Go", Author: "Karim"},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(posts); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	}
-}
-
-func handleCourses(w http.ResponseWriter, r *http.Request) {
-	courses := []Course{
-		{ID: 1, Title: "Go Backend Development", Instructor: "Jhankar Mahbub", Price: 5000.0},
-		{ID: 2, Title: "Full Stack Web Development", Instructor: "Programming Hero Team", Price: 6500.0},
-		{ID: 3, Title: "Docker & Kubernetes Mastery", Instructor: "Kobirul Islam", Price: 4000.0},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(courses); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	}
-}
-
-func handleOrders(w http.ResponseWriter, r *http.Request) {
-	orders := []Order{
-		{ID: 101, UserID: 1, Item: "Laptop", Total: 75000.0, Status: "Delivered"},
-		{ID: 102, UserID: 2, Item: "Mechanical Keyboard", Total: 3500.0, Status: "Processing"},
-		{ID: 103, UserID: 3, Item: "Go Backend Development", Total: 5000.0, Status: "Completed"},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(orders); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
