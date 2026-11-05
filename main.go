@@ -19,7 +19,7 @@ func main() {
 	mux.HandleFunc("/", rootHandler)
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/api/users", handleUsers)
-	mux.HandleFunc("/create-user", handleCreateUser)
+	mux.HandleFunc("POST /create-user", handleCreateUser)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
