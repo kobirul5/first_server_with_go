@@ -12,34 +12,6 @@ type User struct {
 	Email string `json:"email"`
 }
 
-type Product struct {
-	ID       int     `json:"id"`
-	Name     string  `json:"name"`
-	Price    float64 `json:"price"`
-	Category string  `json:"category"`
-}
-
-type Post struct {
-	ID     int    `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-}
-
-type Course struct {
-	ID         int     `json:"id"`
-	Title      string  `json:"title"`
-	Instructor string  `json:"instructor"`
-	Price      float64 `json:"price"`
-}
-
-type Order struct {
-	ID     int     `json:"id"`
-	UserID int     `json:"user_id"`
-	Item   string  `json:"item"`
-	Total  float64 `json:"total"`
-	Status string  `json:"status"`
-}
-
 func main() {
 	mux := http.NewServeMux()
 
@@ -47,6 +19,7 @@ func main() {
 	mux.HandleFunc("/", rootHandler)
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/api/users", handleUsers)
+	mux.HandleFunc("/create-user", handleCreateUser)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -80,4 +53,15 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
+}
+
+// Create users
+func handleCreateUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Fprintln(w, "User created successfully!")
 }
