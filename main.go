@@ -23,6 +23,7 @@ func main() {
 	mux.HandleFunc("POST /create-post", handleCreatePost)
 	mux.HandleFunc("PUT /update-user", handleUpdateUser)
 	mux.HandleFunc("PATCH /update-user", handlePatchUser)
+	mux.HandleFunc("DELETE /delete-user", handleDeleteUser)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -86,4 +87,9 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 // Partially update a user
 func handlePatchUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User updated successfully!")
+}
+
+// Delete a user
+func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "User deleted successfully!")
 }
