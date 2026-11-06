@@ -20,6 +20,7 @@ func main() {
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/api/users", handleUsers)
 	mux.HandleFunc("POST /create-user", handleCreateUser)
+	mux.HandleFunc("POST /create-post", handleCreatePost)
 
 	fmt.Println("Server is running on port 5000...")
 	err := http.ListenAndServe(":5000", mux)
@@ -40,7 +41,6 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Health check passed!")
 }
-
 
 func handleUsers(w http.ResponseWriter, r *http.Request) {
 	users := []User{
@@ -64,4 +64,14 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintln(w, "User created successfully!")
+}
+
+// Create posts
+func handleCreatePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Fprintln(w, "Post created successfully!")
 }
