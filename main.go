@@ -127,5 +127,21 @@ func handlePatchUser(w http.ResponseWriter, r *http.Request) {
 
 // Delete a user
 func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
+
+	idParam := r.PathValue("id")
+
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Invalid user ID")
+		return
+	}
+
+	for idx, user := range users {
+		users = append(users[:idx], users[idx+1:]...)
+	}
+
+
 	fmt.Fprintln(w, "User deleted successfully!")
 }
