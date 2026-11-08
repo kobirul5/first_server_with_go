@@ -139,9 +139,18 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for idx, user := range users {
+
 		users = append(users[:idx], users[idx+1:]...)
+
+		w.WriteHeader(http.StatusNoContent)
+		fmt.Fprintln(w, "User deleted successfully!")
+		return
 	}
 
 
-	fmt.Fprintln(w, "User deleted successfully!")
+ w.WriteHeader(http.StatusNotFound)
+
+ fmt.Println("User not found")
+
+
 }
