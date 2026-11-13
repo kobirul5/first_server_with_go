@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
+
 	"github.com/jackc/pgx/v5"
 )
-
 
 var db *pgx.Conn
 
@@ -24,7 +25,26 @@ var users = []User{
 	{ID: 3, Name: "Kobirul", Email: "kobirul@example.com"},
 }
 
+func connectDB() {
+
+	// urlExample := "postgres://username:password@localhost:5432/database_name"
+	var err error
+
+	db, err = pgx.Connect(context.Background(), connectStr)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Database connected successfully")
+
+	// defer conn.Close(context.Background())
+
+}
+
 func main() {
+
+	connectDB()
+
 	mux := http.NewServeMux()
 
 	// Routes
