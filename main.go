@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -146,17 +147,14 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	for idx, user := range users {
 		if user.ID == id {
-			users = append(users[:idx], users[idx+1:]...)
+			users = slices.Delete(users, idx, idx+1)
+
 			w.WriteHeader(http.StatusNoContent)
 			fmt.Fprintln(w, "User deleted successfully!")
 			return
 		}
 	}
 
-
- w.WriteHeader(http.StatusNotFound)
-
- fmt.Println("User not found")
-
-
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, "User not found")
 }
