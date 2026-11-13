@@ -6,7 +6,11 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"github.com/jackc/pgx/v5"
 )
+
+
+var db *pgx.Conn
 
 type User struct {
 	ID    int    `json:"id"`
