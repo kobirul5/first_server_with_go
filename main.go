@@ -15,8 +15,9 @@ var db *pgx.Conn
 
 type User struct {
 	ID    int    `json:"id"`
-	Name  string `json:"name"`
+	Name  string `json:"username"`
 	Email string `json:"email"`
+	Age   int    `json:"age"`
 }
 
 var users = []User{
@@ -44,6 +45,7 @@ func connectDB() {
 func main() {
 
 	connectDB()
+	defer db.Close(context.Background())
 
 	mux := http.NewServeMux()
 
@@ -148,7 +150,15 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ৪. গ্লোবাল users স্লাইসে নতুন ইউজার যোগ করা
-	users = append(users, newUser)
+	// users = append(users, newUser)
+
+	query := `
+	insert into users (username, age, email)
+	values ($1, $2, $3)
+	returning id
+	`
+
+	db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
 
 	// ৫. সফল রেসপন্স হিসেবে নতুন ইউজারকে রিটার্ন করা
 	w.Header().Set("Content-Type", "application/json")
@@ -156,6 +166,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(newUser); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
+	// json.NewEncoder(w).Encode(newUser)
 }
 
 // Create posts
