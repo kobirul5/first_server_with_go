@@ -58,19 +58,14 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, user := range users {
-
 		if user.ID == id {
-
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(user)
 			return
-
-		} else {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
 		}
-
 	}
+
+	http.Error(w, "User not found", http.StatusNotFound)
 
 }
 
@@ -99,12 +94,44 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 // Create users
 func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	fmt.Fprintln(w, "User created successfully!")
+	// ১. রিকোয়েস্ট বডি থেকে ডাটা রিসিভ করার জন্য User struct এর একটি ভ্যারিয়েবল তৈরি করা
+	var newUser User
+	err := json.NewDecoder(r.Body).Decode(&newUser)
+	if err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// ২. ভ্যালিডেশন চেক (নাম ও ইমেইল দেওয়া হয়েছে কি না)
+	if newUser.Name == "" || newUser.Email == "" {
+		http.Error(w, "Name and Email are required", http.StatusBadRequest)
+		return
+	}
+
+	// ৩. যদি ID না দেওয়া থাকে, তবে অটোমেটিক পরবর্তী ID নির্ধারণ করা
+	if newUser.ID == 0 {
+		maxID := 0
+		for _, u := range users {
+			if u.ID > maxID {
+				maxID = u.ID
+			}
+		}
+		newUser.ID = maxID + 1
+	}
+
+	// ৪. গ্লোবাল users স্লাইসে নতুন ইউজার যোগ করা
+	users = append(users, newUser)
+
+	// ৫. সফল রেসপন্স হিসেবে নতুন ইউজারকে রিটার্ন করা
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(newUser); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	}
 }
 
 // Create posts
