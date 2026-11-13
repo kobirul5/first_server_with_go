@@ -53,8 +53,9 @@ var users = []User{
 | `POST` | `/create-user` | নতুন ইউজার তৈরি করার এন্ডপয়েন্ট | `200 OK` |
 | `POST` | `/create-post` | নতুন পোস্ট তৈরি করার এন্ডপয়েন্ট | `200 OK` |
 | `PUT` | `/update-user` | ইউজার সম্পূর্ণ আপডেট/রিপ্লেস করার জন্য | `200 OK` |
+| `PUT` | `/update-post` | পোস্ট আপডেট/রিপ্লেস করার জন্য | `200 OK` |
 | `PATCH` | `/update-user` | ইউজারের আংশিক তথ্য আপডেট করার জন্য | `200 OK` |
-| `DELETE` | `/delete-user` | ইউজার ডিলিট করার এন্ডপয়েন্ট | `204 No Content` / `404 Not Found` |
+| `DELETE` | `/delete-user/{id}` | নির্দিষ্ট ID-র ইউজার ডিলিট করার এন্ডপয়েন্ট | `204 No Content` / `404 Not Found` |
 
 ---
 

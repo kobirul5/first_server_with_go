@@ -29,8 +29,9 @@ func main() {
 	mux.HandleFunc("POST /create-user", handleCreateUser)
 	mux.HandleFunc("POST /create-post", handleCreatePost)
 	mux.HandleFunc("PUT /update-user", handleUpdateUser)
+	mux.HandleFunc("PUT /update-post", handleUpdatePost)
 	mux.HandleFunc("PATCH /update-user", handlePatchUser)
-	mux.HandleFunc("DELETE /delete-user", handleDeleteUser)
+	mux.HandleFunc("DELETE /delete-user/{id}", handleDeleteUser)
 
 	// daynamic route handling and query parameters are not implemented in this example. You can extend the functionality as needed.
 	mux.HandleFunc("GET /user/{id}", handleGetSingleUser)
@@ -120,6 +121,11 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User replaced successfully!")
 }
 
+// Replace/Update a post
+func handleUpdatePost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Post updated successfully!")
+}
+
 // Partially update a user
 func handlePatchUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User updated successfully!")
@@ -139,12 +145,12 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for idx, user := range users {
-
-		users = append(users[:idx], users[idx+1:]...)
-
-		w.WriteHeader(http.StatusNoContent)
-		fmt.Fprintln(w, "User deleted successfully!")
-		return
+		if user.ID == id {
+			users = append(users[:idx], users[idx+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Fprintln(w, "User deleted successfully!")
+			return
+		}
 	}
 
 
