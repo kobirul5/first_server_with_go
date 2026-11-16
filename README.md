@@ -1,106 +1,129 @@
 # Go HTTP Server (CRUD API)
 
-Go-এর স্ট্যান্ডার্ড লাইব্রেরি (`net/http`) এবং Go 1.22+ এর নতুন `http.ServeMux` রাউটিং ফিচার ব্যবহার করে তৈরি একটি সিম্পল RESTful HTTP সার্ভার।
+A simple RESTful HTTP server built using Go's standard library (`net/http`), Go 1.22+ `http.ServeMux` routing, and PostgreSQL (`pgx/v5`).
 
 ---
 
-## 📁 প্রজেক্ট স্ট্রাকচার
+## 📁 Project Structure
 
 ```text
 go_server/
 ├── explore/
-│   └── explore.go      # Go স্লাইস (Slice) থেকে এলিমেন্ট ডিলিট করার প্র্যাকটিস ফাইল
-├── .gitignore          # গিট ইগনোর ফাইল
-├── GEMINI.md           # প্রজেক্ট গাইডলাইন ও নেমিং কনভেনশন
-├── go.mod              # Go মডিউল ফাইল
-├── main.go             # সার্ভার সেটআপ, রাউটিং এবং সব API হ্যান্ডলার
-└── README.md           # প্রজেক্ট ডকুমেন্টেশন
+│   └── explore.go      # Go slice manipulation practice file
+├── .gitignore          # Git ignore file
+├── GEMINI.md           # Project guidelines & conventions
+├── go.mod              # Go module file
+├── go.sum              # Go dependencies checksums
+├── main.go             # Server setup, database connection, routes, and handlers
+└── README.md           # Project documentation
 ```
 
 ---
 
-## ⚙️ প্রজেক্টটি কীভাবে কাজ করে?
+## ⚙️ How It Works
 
-### ১. সার্ভার সেটআপ (`main.go`)
-- `http.NewServeMux()` ব্যবহার করে একটি রিকোয়েস্ট রাউটার তৈরি করা হয়েছে।
-- পোর্ট `:5000`-এ সার্ভার লিসেন ও সার্ভ করে (`http.ListenAndServe(":5000", mux)`)।
+### 1. Server Setup (`main.go`)
+- Uses `http.NewServeMux()` as the request router.
+- Connects to PostgreSQL using `github.com/jackc/pgx/v5`.
+- Listens and serves on port `:5000` (`http.ListenAndServe(":5000", mux)`).
 
-### ২. রাউটিং মেকানিজম (Go 1.22+ Routing)
-Go 1.22 থেকে সরাসরি রাউটের ভেতরেই HTTP Method এবং ডায়নামিক পাথ প্যারামিটার হ্যান্ডেল করা যায়:
-- **মেথড ম্যাচিং:** যেমন `POST /create-user`, `GET /user/{id}`, `DELETE /delete-user` ইত্যাদি।
-- **পাথ প্যারামিটার:** `r.PathValue("id")` ব্যবহার করে ইউআরএল থেকে ভ্যালু সংগ্রহ করা হয়।
+### 2. Routing Mechanism (Go 1.22+ Routing)
+Starting with Go 1.22, HTTP methods and dynamic path parameters are supported directly in patterns:
+- **Method Matching:** e.g., `POST /create-user`, `GET /user/{id}`, `DELETE /delete-user/{id}`.
+- **Path Parameters:** `r.PathValue("id")` extracts wildcard values from the URL path.
 
-### ৩. ইন-মেমোরি ডেটা স্টোরেজ
-ডেটাবেজের পরিবর্তে একটি গ্লোবাল স্লাইস `users` ব্যবহার করে ডেটা স্টোর করা হয়েছে:
-```go
-var users = []User{
-    {ID: 1, Name: "Rahim", Email: "rahim@example.com"},
-    {ID: 2, Name: "Karim", Email: "karim@example.com"},
-    {ID: 3, Name: "Kobirul", Email: "kobirul@example.com"},
-}
-```
+### 3. Database Integration (PostgreSQL)
+User data is stored and managed in a PostgreSQL database using `pgx/v5`:
+- **Create:** `INSERT INTO users ... RETURNING id`
+- **Read (All):** `SELECT id, username, age, email FROM users ORDER BY id ASC`
+- **Read (Single):** `SELECT id, username, age, email FROM users WHERE id = $1`
+- **Update:** `UPDATE users SET ... WHERE id = $4 RETURNING ...`
+- **Delete:** `DELETE FROM users WHERE id = $1`
 
 ---
 
-## 🚀 API এন্ডপয়েন্টসমূহ
+## 🚀 API Endpoints
 
 | Method | Endpoint | Description | Status Code |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/` | রুট হ্যান্ডলার (স্বাগতম বার্তা) | `200 OK` |
-| `GET` | `/health` | হেলথ চেক এন্ডপয়েন্ট | `200 OK` |
-| `GET` | `/api/users` | ডাটাবেজ থেকে সকল ইউজারের তালিকা রিটার্ন করে (JSON) | `200 OK` |
-| `GET` | `/user/{id}` | ডাটাবেজ থেকে নির্দিষ্ট ID-র ইউজারের তথ্য রিটার্ন করে | `200 OK` / `404 Not Found` |
-| `POST` | `/create-user` | ডাটাবেজে নতুন ইউজার তৈরি করার এন্ডপয়েন্ট | `201 Created` |
-| `POST` | `/create-post` | নতুন পোস্ট তৈরি করার এন্ডপয়েন্ট | `200 OK` |
-| `PUT` | `/update-user/{id}` | ডাটাবেজে ইউজার সম্পূর্ণ আপডেট/রিপ্লেস করার জন্য | `200 OK` / `404 Not Found` |
-| `PUT` | `/update-post` | পোস্ট আপডেট/রিপ্লেস করার জন্য | `200 OK` |
-| `PATCH` | `/update-user` | ইউজারের আংশিক তথ্য আপডেট করার জন্য | `200 OK` |
-| `DELETE` | `/delete-user/{id}` | ডাটাবেজ থেকে নির্দিষ্ট ID-র ইউজার ডিলিট করার এন্ডপয়েন্ট | `200 OK` / `404 Not Found` |
+| `GET` | `/` | Root handler (welcome message) | `200 OK` |
+| `GET` | `/health` | Health check endpoint | `200 OK` |
+| `GET` | `/api/users` | Returns list of all users from database (JSON) | `200 OK` |
+| `GET` | `/user/{id}` | Returns a single user by ID from database | `200 OK` / `404 Not Found` |
+| `POST` | `/create-user` | Creates a new user in database | `201 Created` |
+| `POST` | `/create-post` | Creates a new post | `200 OK` |
+| `PUT` | `/update-user/{id}` | Updates an existing user in database | `200 OK` / `404 Not Found` |
+| `PUT` | `/update-post` | Updates a post | `200 OK` |
+| `PATCH` | `/update-user` | Partially updates a user | `200 OK` |
+| `DELETE` | `/delete-user/{id}` | Deletes a user by ID from database | `200 OK` / `404 Not Found` |
 
 ---
 
-## 🛠️ সার্ভার রান করার নিয়ম
+## 🛠️ How to Run the Server
 
-টার্মিনালে প্রজেক্ট ডিরেক্টরিতে গিয়ে রান করুন:
+Run the server from the project root directory:
 
 ```bash
 go run .
 ```
-সার্ভার সফলভাবে চালু হলে কনসোলে দেখাবে:
+
+When started successfully, the console will display:
 ```text
+Database connected successfully
 Server is running on port 5000...
 ```
 
 ---
 
-## 🧪 API টেস্ট করার কিছু উদাহরণ (cURL)
+## 🧪 Testing with cURL
 
-#### ১. সব ইউজার দেখতে:
+#### 1. Get All Users
 ```bash
 curl http://localhost:5000/api/users
 ```
 
-#### ২. নির্দিষ্ট ইউজার দেখতে (ID: 1):
+#### 2. Get Single User by ID (e.g. ID: 1)
 ```bash
 curl http://localhost:5000/user/1
 ```
 
-#### ৩. নতুন ইউজার তৈরির রিকোয়েস্ট (POST):
+#### 3. Create a User (POST)
 ```bash
-curl -X POST http://localhost:5000/create-user
+curl -X POST http://localhost:5000/create-user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "Abdullah",
+    "email": "abdullah@example.com",
+    "age": 28
+  }'
 ```
 
-#### ৪. হেলথ চেক:
+#### 4. Update a User (PUT)
+```bash
+curl -X PUT http://localhost:5000/update-user/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "Abdullah Al Mamun",
+    "email": "abdullah.mamun@example.com",
+    "age": 29
+  }'
+```
+
+#### 5. Delete a User (DELETE)
+```bash
+curl -X DELETE http://localhost:5000/delete-user/1
+```
+
+#### 6. Health Check
 ```bash
 curl http://localhost:5000/health
 ```
 
 ---
 
-## 🔍 `explore/explore.go` ফাইলে কী হচ্ছে?
-Go স্লাইস থেকে নির্দিষ্ট ইনডেক্সের উপাদান ডিলিট করার টেকনিক প্র্যাকটিস করা হয়েছে:
+## 🔍 `explore/explore.go`
+Demonstrates slice manipulation techniques for removing elements:
 ```go
-// idx নম্বর উপাদান বাদ দিয়ে বাকি দুটি অংশ যুক্ত করা হয়:
+// Removes the element at index `idx`:
 users = append(users[:idx], users[idx+1:]...)
 ```
-

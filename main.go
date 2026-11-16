@@ -109,7 +109,7 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 //---------------------------------------
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	// ServeMux এ "/" সব unmatched পাথে ম্যাচ করে, তাই 404 হ্যান্ডেল করা হলো
+	// ServeMux matches all unmatched paths with "/", so handle 404 for non-root paths
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -160,7 +160,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ১. রিকোয়েস্ট বডি থেকে ডাটা রিসিভ করার জন্য User struct এর একটি ভ্যারিয়েবল তৈরি করা
+	// 1. Decode incoming request body into User struct
 	var newUser User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
@@ -168,13 +168,13 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ২. ভ্যালিডেশন চেক (নাম ও ইমেইল দেওয়া হয়েছে কি না)
+	// 2. Validate required fields (name and email)
 	if newUser.Name == "" || newUser.Email == "" {
 		http.Error(w, "Name and Email are required", http.StatusBadRequest)
 		return
 	}
 
-	// ৩. যদি ID না দেওয়া থাকে, তবে অটোমেটিক পরবর্তী ID নির্ধারণ করা
+	// 3. Fallback ID assignment if not auto-generated
 	if newUser.ID == 0 {
 		maxID := 0
 		for _, u := range users {
@@ -185,9 +185,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		newUser.ID = maxID + 1
 	}
 
-	// ৪. গ্লোবাল users স্লাইসে নতুন ইউজার যোগ করা
-	// users = append(users, newUser)
-
+	// 4. Insert into database
 	query := `
 	insert into users (username, age, email)
 	values ($1, $2, $3)
@@ -196,13 +194,13 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
  
 	err = db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
 
-	// error handle
+	// Error handling
 	if err != nil {
 		http.Error(w, "Failed to insert user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// ৫. সফল রেসপন্স হিসেবে নতুন ইউজারকে রিটার্ন করা
+	// 5. Return newly created user as JSON response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(newUser); err != nil {
@@ -223,7 +221,7 @@ func handleCreatePost(w http.ResponseWriter, r *http.Request) {
 
 // Replace/Update a user in database
 func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
-	// ১. আইডি সংগ্রহ করা (ইউআরএল পাথ অথবা রিকোয়েস্ট বডি থেকে)
+	// 1. Extract ID from URL path or request body
 	idParam := r.PathValue("id")
 	var id int
 	var err error
@@ -236,14 +234,14 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// ২. রিকোয়েস্ট বডি থেকে আপডেট করার ডাটা ডিকোড করা
+	// 2. Decode update data from request body
 	var reqUser User
 	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	// যদি ইউআরএলে আইডি না থাকে তবে বডি থেকে নেওয়া
+	// If ID not in path, use ID from request body
 	if id == 0 && reqUser.ID != 0 {
 		id = reqUser.ID
 	}
@@ -253,13 +251,13 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ৩. ভ্যালিডেশন চেক
+	// 3. Validation check
 	if reqUser.Name == "" || reqUser.Email == "" {
 		http.Error(w, "Username and Email are required", http.StatusBadRequest)
 		return
 	}
 
-	// ৪. ডাটাবেজে আপডেট কুয়েরি চালানো
+	// 4. Execute update query on database
 	query := `
 	UPDATE users
 	SET username = $1, age = $2, email = $3
@@ -284,7 +282,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ৫. সফল আপডেট রেসপন্স পাঠানো
+	// 5. Send successful update response
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(updatedUser); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
