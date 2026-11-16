@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 )
 
 var db *pgx.Conn
@@ -26,11 +28,10 @@ var users = []User{
 }
 
 func connectDB() {
-
-	// urlExample := "postgres://username:password@localhost:5432/database_name"
 	var err error
 
-	connectStr := "postgres://postgres:postgres@localhost:5432/go_crud"
+	
+	connectStr := os.Getenv("DB_URL")
 
 	db, err = pgx.Connect(context.Background(), connectStr)
 	if err != nil {
@@ -38,12 +39,16 @@ func connectDB() {
 	}
 
 	fmt.Println("Database connected successfully")
-
-	// defer conn.Close(context.Background())
-
 }
 
 func main() {
+	var err error
+
+	err = godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file:", err)
+	}
+
 
 	connectDB()
 	defer db.Close(context.Background())
@@ -66,7 +71,7 @@ func main() {
 	mux.HandleFunc("GET /user/{id}", handleGetSingleUser)
 
 	fmt.Println("Server is running on port 5000...")
-	err := http.ListenAndServe(":5000", mux)
+	err = http.ListenAndServe(":5000", mux)
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 	}
