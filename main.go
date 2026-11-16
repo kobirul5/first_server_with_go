@@ -31,6 +31,8 @@ func connectDB() {
 	// urlExample := "postgres://username:password@localhost:5432/database_name"
 	var err error
 
+	connectStr := "postgres://postgres:postgres@localhost:5432/go_crud"
+
 	db, err = pgx.Connect(context.Background(), connectStr)
 	if err != nil {
 		panic(err)
@@ -56,6 +58,7 @@ func main() {
 	mux.HandleFunc("POST /create-user", handleCreateUser)
 	mux.HandleFunc("POST /create-post", handleCreatePost)
 	mux.HandleFunc("PUT /update-user", handleUpdateUser)
+	mux.HandleFunc("PUT /update-user/{id}", handleUpdateUser)
 	mux.HandleFunc("PUT /update-post", handleUpdatePost)
 	mux.HandleFunc("PATCH /update-user", handlePatchUser)
 	mux.HandleFunc("DELETE /delete-user/{id}", handleDeleteUser)
@@ -157,8 +160,14 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	values ($1, $2, $3)
 	returning id
 	`
+ 
+	err = db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
 
-	db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
+	// error handle
+	if err != nil {
+		http.Error(w, "Failed to insert user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// ৫. সফল রেসপন্স হিসেবে নতুন ইউজারকে রিটার্ন করা
 	w.Header().Set("Content-Type", "application/json")
@@ -179,9 +188,74 @@ func handleCreatePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Post created successfully!")
 }
 
-// Replace a user
+// Replace/Update a user in database
 func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "User replaced successfully!")
+	// ১. আইডি সংগ্রহ করা (ইউআরএল পাথ অথবা রিকোয়েস্ট বডি থেকে)
+	idParam := r.PathValue("id")
+	var id int
+	var err error
+
+	if idParam != "" {
+		id, err = strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(w, "Invalid user ID in path", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ২. রিকোয়েস্ট বডি থেকে আপডেট করার ডাটা ডিকোড করা
+	var reqUser User
+	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// যদি ইউআরএলে আইডি না থাকে তবে বডি থেকে নেওয়া
+	if id == 0 && reqUser.ID != 0 {
+		id = reqUser.ID
+	}
+
+	if id == 0 {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// ৩. ভ্যালিডেশন চেক
+	if reqUser.Name == "" || reqUser.Email == "" {
+		http.Error(w, "Username and Email are required", http.StatusBadRequest)
+		return
+	}
+
+	// ৪. ডাটাবেজে আপডেট কুয়েরি চালানো
+	query := `
+	UPDATE users
+	SET username = $1, age = $2, email = $3
+	WHERE id = $4
+	RETURNING id, username, age, email
+	`
+
+	var updatedUser User
+	err = db.QueryRow(context.Background(), query, reqUser.Name, reqUser.Age, reqUser.Email, id).Scan(
+		&updatedUser.ID,
+		&updatedUser.Name,
+		&updatedUser.Age,
+		&updatedUser.Email,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to update user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// ৫. সফল আপডেট রেসপন্স পাঠানো
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(updatedUser); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	}
 }
 
 // Replace/Update a post
