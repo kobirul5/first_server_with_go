@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"slices"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -73,12 +72,9 @@ func main() {
 	}
 }
 
-// get single user by id, dynamic route handling, and query parameters are not implemented in this example. You can extend the functionality as needed.
-
+// get single user by id from database
 func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
-
 	idParam := r.PathValue("id")
-	fmt.Printf("the value or id %v and the type  of the id is %T", idParam, idParam)
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -86,16 +82,28 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, user := range users {
-		if user.ID == id {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(user)
+	query := `SELECT id, username, age, email FROM users WHERE id = $1`
+	var user User
+	err = db.QueryRow(context.Background(), query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Age,
+		&user.Email,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
+		http.Error(w, "Failed to fetch user: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	http.Error(w, "User not found", http.StatusNotFound)
-
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	}
 }
 
 //---------------------------------------
@@ -113,9 +121,34 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Health check passed!")
 }
 
+// Get all users from database
 func handleUsers(w http.ResponseWriter, r *http.Request) {
+	query := `SELECT id, username, age, email FROM users ORDER BY id ASC`
+
+	rows, err := db.Query(context.Background(), query)
+	if err != nil {
+		http.Error(w, "Failed to fetch users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var userList = []User{}
+	for rows.Next() {
+		var u User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Age, &u.Email); err != nil {
+			http.Error(w, "Failed to scan user: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		userList = append(userList, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Row iteration error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(users); err != nil {
+	if err := json.NewEncoder(w).Encode(userList); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
@@ -268,29 +301,29 @@ func handlePatchUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User updated successfully!")
 }
 
-// Delete a user
+// Delete a user from database
 func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
-
 	idParam := r.PathValue("id")
 
 	id, err := strconv.Atoi(idParam)
-
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "Invalid user ID")
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
 
-	for idx, user := range users {
-		if user.ID == id {
-			users = slices.Delete(users, idx, idx+1)
-
-			w.WriteHeader(http.StatusNoContent)
-			fmt.Fprintln(w, "User deleted successfully!")
-			return
-		}
+	query := `DELETE FROM users WHERE id = $1`
+	cmdTag, err := db.Exec(context.Background(), query, id)
+	if err != nil {
+		http.Error(w, "Failed to delete user: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintln(w, "User not found")
+	if cmdTag.RowsAffected() == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "User deleted successfully!")
 }
