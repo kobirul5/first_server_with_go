@@ -69,6 +69,9 @@ func main() {
 
 	// daynamic route handling and query parameters are not implemented in this example. You can extend the functionality as needed.
 	mux.HandleFunc("GET /user/{id}", handleGetSingleUser)
+	mux.HandleFunc("GET /api/users/search", handleSearchUsers)
+	mux.HandleFunc("POST /api/users/form", handleCreateUserForm)
+	mux.HandleFunc("GET /api/external-posts", handleExternalData)
 
 	fmt.Println("Server is running on port 5000...")
 	err = http.ListenAndServe(":5000", mux)
@@ -329,4 +332,115 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "User deleted successfully!")
+}
+
+// 1. Data via URL Query Parameters (e.g. /api/users/search?username=Rahim&limit=5)
+func handleSearchUsers(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	limitParam := r.URL.Query().Get("limit")
+
+	limit := 10
+	if limitParam != "" {
+		if l, err := strconv.Atoi(limitParam); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	query := `SELECT id, username, age, email FROM users WHERE ($1 = '' OR username ILIKE '%' || $1 || '%') ORDER BY id ASC LIMIT $2`
+	rows, err := db.Query(context.Background(), query, username, limit)
+	if err != nil {
+		http.Error(w, "Failed to search users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var userList = []User{}
+	for rows.Next() {
+		var u User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Age, &u.Email); err != nil {
+			http.Error(w, "Failed to scan user: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		userList = append(userList, u)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userList)
+}
+
+// 2. Data via HTML Form Data & Headers (instead of JSON body)
+func handleCreateUserForm(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse URL-encoded / multipart form body
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Read data from request headers as well
+	clientSource := r.Header.Get("X-Client-Source")
+	if clientSource == "" {
+		clientSource = "Web Form / HTML"
+	}
+
+	username := r.FormValue("username")
+	email := r.FormValue("email")
+	ageStr := r.FormValue("age")
+
+	if username == "" || email == "" {
+		http.Error(w, "Username and Email are required form fields", http.StatusBadRequest)
+		return
+	}
+
+	age, _ := strconv.Atoi(ageStr)
+
+	query := `
+	INSERT INTO users (username, age, email)
+	VALUES ($1, $2, $3)
+	RETURNING id
+	`
+
+	var newID int
+	err := db.QueryRow(context.Background(), query, username, age, email).Scan(&newID)
+	if err != nil {
+		http.Error(w, "Failed to insert user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]any{
+		"message":       "User created successfully via Form Data",
+		"id":            newID,
+		"username":      username,
+		"email":         email,
+		"age":           age,
+		"client_source": clientSource,
+	})
+}
+
+// 3. Data from an External 3rd-party API (No Database Used)
+func handleExternalData(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get("https://jsonplaceholder.typicode.com/posts?_limit=3")
+	if err != nil {
+		http.Error(w, "Failed to fetch external data: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	var externalPosts []map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&externalPosts); err != nil {
+		http.Error(w, "Failed to parse external JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"source": "External 3rd-party API (No Database Used)",
+		"posts":  externalPosts,
+	})
 }
