@@ -54,7 +54,6 @@ User data is stored and managed in a PostgreSQL database using `pgx/v5`:
 | `POST` | `/create-post` | Creates a new post | `200 OK` |
 | `PUT` | `/update-user/{id}` | Updates an existing user in database | `200 OK` / `404 Not Found` |
 | `PUT` | `/update-post` | Updates a post | `200 OK` |
-| `PATCH` | `/update-user` | Partially updates a user | `200 OK` |
 | `DELETE` | `/delete-user/{id}` | Deletes a user by ID from database | `200 OK` / `404 Not Found` |
 | `GET` | `/api/users/search` | Search users via URL Query Parameters (`?username=...&limit=...`) | `200 OK` |
 | `POST` | `/api/users/form` | Create user via Form Data & Headers (instead of JSON body) | `201 Created` |

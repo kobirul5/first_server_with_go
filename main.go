@@ -61,10 +61,8 @@ func main() {
 	mux.HandleFunc("/api/users", handleUsers)
 	mux.HandleFunc("POST /create-user", handleCreateUser)
 	mux.HandleFunc("POST /create-post", handleCreatePost)
-	mux.HandleFunc("PUT /update-user", handleUpdateUser)
 	mux.HandleFunc("PUT /update-user/{id}", handleUpdateUser)
 	mux.HandleFunc("PUT /update-post", handleUpdatePost)
-	mux.HandleFunc("PATCH /update-user", handlePatchUser)
 	mux.HandleFunc("DELETE /delete-user/{id}", handleDeleteUser)
 
 	// daynamic route handling and query parameters are not implemented in this example. You can extend the functionality as needed.
@@ -300,11 +298,6 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 // Replace/Update a post
 func handleUpdatePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Post updated successfully!")
-}
-
-// Partially update a user
-func handlePatchUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "User updated successfully!")
 }
 
 // Delete a user from database
