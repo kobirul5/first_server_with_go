@@ -10,11 +10,15 @@ A simple RESTful HTTP server built using Go's standard library (`net/http`), Go 
 go_server/
 ├── explore/
 │   └── explore.go      # Go slice manipulation practice file
+├── .env                # Environment variables configuration
 ├── .gitignore          # Git ignore file
 ├── GEMINI.md           # Project guidelines & conventions
 ├── go.mod              # Go module file
 ├── go.sum              # Go dependencies checksums
-├── main.go             # Server setup, database connection, routes, and handlers
+├── db.go               # Database connection and configuration
+├── model.go            # Data models and structures (User)
+├── handlers.go         # HTTP request handlers and business logic
+├── main.go             # Application entrypoint and route definitions
 └── README.md           # Project documentation
 ```
 
