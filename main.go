@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"go-http-curd/db"
 	"net/http"
+
+	"go-http-curd/db"
+	"go-http-curd/handlers"
 
 	"github.com/joho/godotenv"
 )
@@ -23,20 +25,20 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Routes
-	mux.HandleFunc("/", rootHandler)
-	mux.HandleFunc("/health", handleHealth)
-	mux.HandleFunc("/api/users", handleUsers)
-	mux.HandleFunc("POST /create-user", handleCreateUser)
-	mux.HandleFunc("POST /create-post", handleCreatePost)
-	mux.HandleFunc("PUT /update-user/{id}", handleUpdateUser)
-	mux.HandleFunc("PUT /update-post", handleUpdatePost)
-	mux.HandleFunc("DELETE /delete-user/{id}", handleDeleteUser)
+	mux.HandleFunc("/", handlers.RootHandler)
+	mux.HandleFunc("/health", handlers.HandleHealth)
+	mux.HandleFunc("/api/users", handlers.HandleUsers)
+	mux.HandleFunc("POST /create-user", handlers.HandleCreateUser)
+	mux.HandleFunc("POST /create-post", handlers.HandleCreatePost)
+	mux.HandleFunc("PUT /update-user/{id}", handlers.HandleUpdateUser)
+	mux.HandleFunc("PUT /update-post", handlers.HandleUpdatePost)
+	mux.HandleFunc("DELETE /delete-user/{id}", handlers.HandleDeleteUser)
 
 	// Dynamic route handling and parameters
-	mux.HandleFunc("GET /user/{id}", handleGetSingleUser)
-	mux.HandleFunc("GET /api/users/search", handleSearchUsers)
-	mux.HandleFunc("POST /api/users/form", handleCreateUserForm)
-	mux.HandleFunc("GET /api/external-posts", handleExternalData)
+	mux.HandleFunc("GET /user/{id}", handlers.HandleGetSingleUser)
+	mux.HandleFunc("GET /api/users/search", handlers.HandleSearchUsers)
+	mux.HandleFunc("POST /api/users/form", handlers.HandleCreateUserForm)
+	mux.HandleFunc("GET /api/external-posts", handlers.HandleExternalData)
 
 	fmt.Println("Server is running on port 5000...")
 	err = http.ListenAndServe(":5000", mux)

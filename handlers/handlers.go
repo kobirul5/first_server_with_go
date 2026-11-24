@@ -1,18 +1,20 @@
-package main
+package handlers
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go-http-curd/db"
 	"net/http"
 	"strconv"
+
+	"go-http-curd/db"
+	"go-http-curd/model"
 
 	"github.com/jackc/pgx/v5"
 )
 
-// rootHandler handles the root route "/"
-func rootHandler(w http.ResponseWriter, r *http.Request) {
+// RootHandler handles the root route "/"
+func RootHandler(w http.ResponseWriter, r *http.Request) {
 	// ServeMux matches all unmatched paths with "/", so handle 404 for non-root paths
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -21,13 +23,13 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Welcome to the Go Server!")
 }
 
-// handleHealth checks server health status
-func handleHealth(w http.ResponseWriter, r *http.Request) {
+// HandleHealth checks server health status
+func HandleHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Health check passed!")
 }
 
-// handleUsers fetches all users from database
-func handleUsers(w http.ResponseWriter, r *http.Request) {
+// HandleUsers fetches all users from database
+func HandleUsers(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT id, username, age, email FROM users ORDER BY id ASC`
 
 	rows, err := db.Db.Query(context.Background(), query)
@@ -37,9 +39,9 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var userList = []User{}
+	var userList = []model.User{}
 	for rows.Next() {
-		var u User
+		var u model.User
 		if err := rows.Scan(&u.ID, &u.Name, &u.Age, &u.Email); err != nil {
 			http.Error(w, "Failed to scan user: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -58,8 +60,8 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleGetSingleUser fetches a single user by ID from database
-func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
+// HandleGetSingleUser fetches a single user by ID from database
+func HandleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 
 	id, err := strconv.Atoi(idParam)
@@ -69,7 +71,7 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `SELECT id, username, age, email FROM users WHERE id = $1`
-	var user User
+	var user model.User
 	err = db.Db.QueryRow(context.Background(), query, id).Scan(
 		&user.ID,
 		&user.Name,
@@ -92,15 +94,15 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleCreateUser inserts a new user into the database
-func handleCreateUser(w http.ResponseWriter, r *http.Request) {
+// HandleCreateUser inserts a new user into the database
+func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// 1. Decode incoming request body into User struct
-	var newUser User
+	var newUser model.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -116,7 +118,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// 3. Fallback ID assignment if not auto-generated
 	if newUser.ID == 0 {
 		maxID := 0
-		for _, u := range users {
+		for _, u := range model.Users {
 			if u.ID > maxID {
 				maxID = u.ID
 			}
@@ -147,8 +149,8 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleCreatePost creates a dummy post
-func handleCreatePost(w http.ResponseWriter, r *http.Request) {
+// HandleCreatePost creates a dummy post
+func HandleCreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -157,8 +159,8 @@ func handleCreatePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Post created successfully!")
 }
 
-// handleUpdateUser updates an existing user in database
-func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
+// HandleUpdateUser updates an existing user in database
+func HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	// 1. Extract ID from URL path or request body
 	idParam := r.PathValue("id")
 	var id int
@@ -173,7 +175,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Decode update data from request body
-	var reqUser User
+	var reqUser model.User
 	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
@@ -203,7 +205,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	RETURNING id, username, age, email
 	`
 
-	var updatedUser User
+	var updatedUser model.User
 	err = db.Db.QueryRow(context.Background(), query, reqUser.Name, reqUser.Age, reqUser.Email, id).Scan(
 		&updatedUser.ID,
 		&updatedUser.Name,
@@ -227,13 +229,13 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleUpdatePost updates a dummy post
-func handleUpdatePost(w http.ResponseWriter, r *http.Request) {
+// HandleUpdatePost updates a dummy post
+func HandleUpdatePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Post updated successfully!")
 }
 
-// handleDeleteUser removes a user by ID from the database
-func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
+// HandleDeleteUser removes a user by ID from the database
+func HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 
 	id, err := strconv.Atoi(idParam)
@@ -259,8 +261,8 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "User deleted successfully!")
 }
 
-// handleSearchUsers searches users via URL Query Parameters
-func handleSearchUsers(w http.ResponseWriter, r *http.Request) {
+// HandleSearchUsers searches users via URL Query Parameters
+func HandleSearchUsers(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	limitParam := r.URL.Query().Get("limit")
 
@@ -279,9 +281,9 @@ func handleSearchUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var userList = []User{}
+	var userList = []model.User{}
 	for rows.Next() {
-		var u User
+		var u model.User
 		if err := rows.Scan(&u.ID, &u.Name, &u.Age, &u.Email); err != nil {
 			http.Error(w, "Failed to scan user: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -293,8 +295,8 @@ func handleSearchUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userList)
 }
 
-// handleCreateUserForm creates a user via HTML Form Data & Headers
-func handleCreateUserForm(w http.ResponseWriter, r *http.Request) {
+// HandleCreateUserForm creates a user via HTML Form Data & Headers
+func HandleCreateUserForm(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -348,8 +350,8 @@ func handleCreateUserForm(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleExternalData fetches data from an external 3rd-party API
-func handleExternalData(w http.ResponseWriter, r *http.Request) {
+// HandleExternalData fetches data from an external 3rd-party API
+func HandleExternalData(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get("https://jsonplaceholder.typicode.com/posts?_limit=3")
 	if err != nil {
 		http.Error(w, "Failed to fetch external data: "+err.Error(), http.StatusBadGateway)

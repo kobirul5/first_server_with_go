@@ -1,4 +1,4 @@
-package main
+package model
 
 type User struct {
 	ID    int    `json:"id"`
@@ -7,7 +7,7 @@ type User struct {
 	Age   int    `json:"age"`
 }
 
-var users = []User{
+var Users = []User{
 	{ID: 1, Name: "Rahim", Email: "rahim@example.com", Age: 25},
 	{ID: 2, Name: "Karim", Email: "karim@example.com", Age: 24},
 	{ID: 3, Name: "Kobirul", Email: "kobirul@example.com", Age: 26},
