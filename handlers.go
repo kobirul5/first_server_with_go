@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go-http-curd/db"
 	"net/http"
 	"strconv"
 
@@ -29,7 +30,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func handleUsers(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT id, username, age, email FROM users ORDER BY id ASC`
 
-	rows, err := db.Query(context.Background(), query)
+	rows, err := db.Db.Query(context.Background(), query)
 	if err != nil {
 		http.Error(w, "Failed to fetch users: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -69,7 +70,7 @@ func handleGetSingleUser(w http.ResponseWriter, r *http.Request) {
 
 	query := `SELECT id, username, age, email FROM users WHERE id = $1`
 	var user User
-	err = db.QueryRow(context.Background(), query, id).Scan(
+	err = db.Db.QueryRow(context.Background(), query, id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Age,
@@ -130,7 +131,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	returning id
 	`
 
-	err = db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
+	err = db.Db.QueryRow(context.Background(), query, newUser.Name, newUser.Age, newUser.Email).Scan(&newUser.ID)
 
 	// Error handling
 	if err != nil {
@@ -203,7 +204,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var updatedUser User
-	err = db.QueryRow(context.Background(), query, reqUser.Name, reqUser.Age, reqUser.Email, id).Scan(
+	err = db.Db.QueryRow(context.Background(), query, reqUser.Name, reqUser.Age, reqUser.Email, id).Scan(
 		&updatedUser.ID,
 		&updatedUser.Name,
 		&updatedUser.Age,
@@ -242,7 +243,7 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `DELETE FROM users WHERE id = $1`
-	cmdTag, err := db.Exec(context.Background(), query, id)
+	cmdTag, err := db.Db.Exec(context.Background(), query, id)
 	if err != nil {
 		http.Error(w, "Failed to delete user: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -271,7 +272,7 @@ func handleSearchUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `SELECT id, username, age, email FROM users WHERE ($1 = '' OR username ILIKE '%' || $1 || '%') ORDER BY id ASC LIMIT $2`
-	rows, err := db.Query(context.Background(), query, username, limit)
+	rows, err := db.Db.Query(context.Background(), query, username, limit)
 	if err != nil {
 		http.Error(w, "Failed to search users: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -329,7 +330,7 @@ func handleCreateUserForm(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var newID int
-	err := db.QueryRow(context.Background(), query, username, age, email).Scan(&newID)
+	err := db.Db.QueryRow(context.Background(), query, username, age, email).Scan(&newID)
 	if err != nil {
 		http.Error(w, "Failed to insert user: "+err.Error(), http.StatusInternalServerError)
 		return

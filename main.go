@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go-http-curd/db"
 	"net/http"
 
 	"github.com/joho/godotenv"
@@ -16,8 +17,8 @@ func main() {
 		fmt.Println("Error loading .env file:", err)
 	}
 
-	connectDB()
-	defer db.Close(context.Background())
+	db.ConnectDB()
+	defer db.Db.Close(context.Background())
 
 	mux := http.NewServeMux()
 
